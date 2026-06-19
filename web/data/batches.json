@@ -1,22 +1,5 @@
 [
-    {
-        "id": 1119,
-        "title": "Sociology Optional Online - Hindi Medium",
-        "category_id": 2,
-        "start_at": "2026-07-16",
-        "end_at": "2027-09-16",
-        "image_large": "https://kgs-v2.akamaized.net/kgs/kgs/courses/large/97edc215-df6d-4af5-a6b4-84926000b63e.jpg",
-        "image_thumb": "https://kgs-v2.akamaized.net/kgs/kgs/courses/thumb/97edc215-df6d-4af5-a6b4-84926000b63e.jpg"
-    },
-    {
-        "id": 1117,
-        "title": "SSC FOUNDATION शिखर बैच -2026-27",
-        "category_id": 4,
-        "start_at": "2026-07-02",
-        "end_at": "2027-07-02",
-        "image_large": "https://kgs-v2.akamaized.net/kgs/kgs/courses/large/0d507dfd-ee43-4625-9df2-e3e7fbc56b63.jpg",
-        "image_thumb": "https://kgs-v2.akamaized.net/kgs/kgs/courses/thumb/0d507dfd-ee43-4625-9df2-e3e7fbc56b63.jpg"
-    },
+
     {
         "id": 1115,
         "title": "UPSC & UPPSC (Pre + Mains) Foundation Batch 2027 Hindi Medium (Offline Prayagraj)",
@@ -71,33 +54,8 @@
         "image_large": "https://kgs-v2.akamaized.net/kgs/kgs/courses/large/b3c3a68d-daac-4260-9bbb-b91251a658f2.jpg",
         "image_thumb": "https://kgs-v2.akamaized.net/kgs/kgs/courses/thumb/b3c3a68d-daac-4260-9bbb-b91251a658f2.jpg"
     },
-    {
-        "id": 1108,
-        "title": "PSIR Optional (Hindi Medium) Batch",
-        "category_id": 2,
-        "start_at": "2026-07-20",
-        "end_at": "2027-07-20",
-        "image_large": "https://kgs-v2.akamaized.net/kgs/kgs/courses/large/c06cb017-8c5d-4643-96fc-e547cca204e9.png",
-        "image_thumb": "https://kgs-v2.akamaized.net/kgs/kgs/courses/thumb/c06cb017-8c5d-4643-96fc-e547cca204e9.png"
-    },
-    {
-        "id": 1107,
-        "title": "Sociology Optional ( English Medium) Batch",
-        "category_id": 2,
-        "start_at": "2026-07-20",
-        "end_at": "2027-07-20",
-        "image_large": "https://kgs-v2.akamaized.net/kgs/kgs/courses/large/d5ab263d-d50c-4ef0-a96f-1178d6172bee.png",
-        "image_thumb": "https://kgs-v2.akamaized.net/kgs/kgs/courses/thumb/d5ab263d-d50c-4ef0-a96f-1178d6172bee.png"
-    },
-    {
-        "id": 1106,
-        "title": "Public Administration Optional ( English Medium) Batch",
-        "category_id": 2,
-        "start_at": "2026-07-21",
-        "end_at": "2027-07-31",
-        "image_large": "https://kgs-v2.akamaized.net/kgs/kgs/courses/large/730b9248-a278-4000-b591-b540892afe9e.png",
-        "image_thumb": "https://kgs-v2.akamaized.net/kgs/kgs/courses/thumb/730b9248-a278-4000-b591-b540892afe9e.png"
-    },
+
+
     {
         "id": 1105,
         "title": "UPPSC Foundation Batch 2027 (Hindi Medium)",
@@ -287,15 +245,7 @@
         "image_large": "https://kgs-v2.akamaized.net/kgs/kgs/courses/large/826635bf-7d1b-4210-8a84-764d660ba2b9.jpg",
         "image_thumb": "https://kgs-v2.akamaized.net/kgs/kgs/courses/thumb/826635bf-7d1b-4210-8a84-764d660ba2b9.jpg"
     },
-    {
-        "id": 1084,
-        "title": "UPSC GS Foundation Batch 2027 English Medium (Boring Road)",
-        "category_id": 4,
-        "start_at": "2026-07-07",
-        "end_at": "2027-12-31",
-        "image_large": "https://kgs-v2.akamaized.net/kgs/kgs/courses/large/d92dea12-7c1a-48d7-b506-fd6fd4e3359b.png",
-        "image_thumb": "https://kgs-v2.akamaized.net/kgs/kgs/courses/thumb/d92dea12-7c1a-48d7-b506-fd6fd4e3359b.png"
-    },
+
     {
         "id": 1083,
         "title": "CTET September 2026 (Paper-2) लक्ष्य Batch",

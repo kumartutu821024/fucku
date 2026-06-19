@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi" class="dark">
+<html lang="hi" class="dark scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,14 +33,19 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="min-h-screen bg-slate-50 dark:bg-[#0B0E14] text-slate-800 dark:text-white transition-colors duration-300 antialiased font-sans flex flex-col lg:flex-row p-0 md:p-4 gap-4 pb-20 lg:pb-4 selection:bg-brand-orange/35">
+<body class="min-h-screen bg-slate-50 dark:bg-[#0B0E14] text-slate-800 dark:text-white transition-colors duration-300 antialiased font-sans flex flex-col lg:flex-row p-0 md:p-4 gap-4 pb-20 lg:pb-4 selection:bg-brand-orange/35 overflow-x-hidden">
 
-  <!-- Toast Notification Drawer -->
-  <div id="toast-container" class="fixed top-6 right-6 z-50 flex flex-col gap-3 max-w-sm pointer-events-none"></div>
+  <!-- Mobile Sidebar Overlay -->
+  <div id="mobile-sidebar-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] hidden lg:hidden opacity-0 transition-opacity duration-300"></div>
 
-  <!-- Left Sidebar (Desktop only) -->
-  <aside class="w-64 flex-col shrink-0 hidden lg:flex h-[calc(100vh-2rem)] sticky top-4 rounded-3xl bg-white dark:bg-[#12151C] shadow-2xl p-6 border border-slate-200/50 dark:border-white/10 justify-between select-none">
-    <div>
+  <!-- Left Sidebar -->
+  <aside id="app-sidebar" class="fixed lg:sticky top-0 lg:top-4 left-0 w-72 lg:w-64 h-full lg:h-[calc(100vh-2rem)] flex flex-col shrink-0 -translate-x-full lg:translate-x-0 lg:flex z-[70] transition-transform duration-300 rounded-r-3xl lg:rounded-3xl bg-white dark:bg-[#12151C] shadow-2xl p-6 border border-slate-200/50 dark:border-white/10 justify-between select-none">
+    <div class="overflow-y-auto pr-2 custom-scrollbar">
+      <!-- Close button for mobile -->
+      <button id="close-sidebar-btn" class="lg:hidden absolute top-4 right-4 p-2 text-slate-400">
+        <i data-lucide="x" class="w-6 h-6"></i>
+      </button>
+
       <!-- Brand Logo Header -->
       <div class="flex items-center space-x-3 pb-6 border-b border-slate-100 dark:border-white/10">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#007AFF] to-[#FF6B00] p-0.5 shadow-lg relative group overflow-hidden flex items-center justify-center text-white font-display font-black text-xl">
@@ -77,20 +82,37 @@
       <!-- Course Categories Panel -->
       <div class="mt-8 space-y-1.5">
         <label class="text-[10px] font-mono font-bold text-slate-400 dark:text-[#A0A0A0] uppercase tracking-widest block pl-3 mb-2">
+          नेविगेशन
+        </label>
+        <div id="sidebar-navigation" class="space-y-1 mb-4">
+           <button
+            onclick="window.location.hash = '#/'"
+            id="side-nav-home"
+            class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-display font-medium tracking-wide transition-all duration-200 bg-brand-orange/10 dark:bg-brand-orange/15 text-brand-orange font-bold border-r-3 border-r-brand-orange"
+          >
+            <div class="flex items-center space-x-3 pointer-events-none">
+              <i data-lucide="home" class="w-4 h-4 text-brand-orange"></i>
+              <span>होम स्क्रीन</span>
+            </div>
+          </button>
+          <button
+            onclick="window.location.hash = '#/saved'"
+            id="side-nav-saved"
+            class="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-display font-medium tracking-wide transition-all duration-200 text-slate-600 dark:text-[#A0A0A0] hover:bg-slate-100 dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white border border-transparent"
+          >
+            <div class="flex items-center space-x-3 pointer-events-none">
+              <i data-lucide="star" class="w-4 h-4 text-slate-400 dark:text-[#A0A0A0]"></i>
+              <span>सेव किए गए बैच</span>
+            </div>
+            <span id="saved-count-badge" class="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/5 text-slate-400 font-mono font-bold">0</span>
+          </button>
+        </div>
+
+        <label class="text-[10px] font-mono font-bold text-slate-400 dark:text-[#A0A0A0] uppercase tracking-widest block pl-3 mb-2">
           कोर्स श्रेणियां
         </label>
         <div id="sidebar-categories" class="space-y-1">
           <!-- Active categories injected dynamically -->
-        </div>
-      </div>
-
-      <!-- My Batches Section -->
-      <div class="mt-8 space-y-1.5">
-        <label class="text-[10px] font-mono font-bold text-slate-400 dark:text-[#A0A0A0] uppercase tracking-widest block pl-3 mb-2">
-          मेरे बैच (My Batches)
-        </label>
-        <div id="sidebar-saved-batches" class="space-y-1">
-          <!-- Saved batches injected here -->
         </div>
       </div>
     </div>
@@ -115,27 +137,34 @@
   </aside>
 
   <!-- Main Content Framework -->
-  <main class="flex-1 flex flex-col min-w-0 px-3 md:px-0 mt-4 md:mt-0 overflow-y-auto">
+  <main id="main-content" class="flex-1 flex flex-col min-w-0 px-3 md:px-0 mt-4 md:mt-0 overflow-y-auto scroll-smooth">
     <!-- Header Utility Area -->
     <header class="p-4 md:p-6 rounded-3xl bg-white dark:bg-[#12151C] shadow-xl border border-slate-100 dark:border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-4 select-none mb-6">
       
-      <!-- Combined Live Search Input widget -->
-      <div class="flex-1 max-w-lg relative group">
-        <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#A0A0A0] group-focus-within:text-brand-orange transition-colors">
-          <i data-lucide="search" class="w-4 h-4"></i>
-        </div>
-        <input 
-          id="global-search-input"
-          type="text" 
-          placeholder="बैच, विषय या व्याख्यान खोजें..." 
-          class="w-full bg-slate-50 dark:bg-[#1E222B] text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 pl-11 pr-16 py-3 rounded-2xl outline-none border border-slate-100 dark:border-slate-800 focus:border-brand-orange dark:focus:border-brand-orange transition-all text-sm shadow-sm"
-        />
-        <button 
-          id="clear-search-btn"
-          class="absolute hidden right-3 top-1/2 -translate-y-1/2 text-[10px] bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 px-2 py-1 rounded-lg text-slate-700 dark:text-white font-bold transition-all"
-        >
-          साफ़ करें
+      <div class="flex items-center gap-3">
+        <!-- Mobile Toggle Button -->
+        <button id="open-sidebar-btn" class="lg:hidden p-2.5 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-white active:scale-95 transition-all">
+          <i data-lucide="menu" class="w-5 h-5"></i>
         </button>
+
+        <!-- Combined Live Search Input widget -->
+        <div class="flex-1 max-w-lg relative group min-w-[200px]">
+          <div class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#A0A0A0] group-focus-within:text-brand-orange transition-colors">
+            <i data-lucide="search" class="w-4 h-4"></i>
+          </div>
+          <input
+            id="global-search-input"
+            type="text"
+            placeholder="खोजें..."
+            class="w-full bg-slate-50 dark:bg-[#1E222B] text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 pl-11 pr-16 py-3 rounded-2xl outline-none border border-slate-100 dark:border-slate-800 focus:border-brand-orange dark:focus:border-brand-orange transition-all text-sm shadow-sm"
+          />
+          <button
+            id="clear-search-btn"
+            class="absolute hidden right-3 top-1/2 -translate-y-1/2 text-[10px] bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 px-2 py-1 rounded-lg text-slate-700 dark:text-white font-bold transition-all"
+          >
+            साफ़
+          </button>
+        </div>
       </div>
 
       <!-- Actions drawer -->
@@ -202,25 +231,12 @@
       <span class="text-[9px]">होम</span>
     </button>
     <button 
-      id="mob-nav-live"
+      id="mob-nav-saved"
+      onclick="window.location.hash = '#/saved'"
       class="flex flex-col items-center justify-center gap-1 p-2 text-slate-400 dark:text-[#A0A0A0] flex-1 hover:text-brand-orange transition-all"
     >
-      <i data-lucide="tv" class="w-5 h-5"></i>
-      <span class="text-[9px]">लाइव क्लासेस</span>
-    </button>
-    <button 
-      id="mob-nav-[#A0A0A0]"
-      class="flex flex-col items-center justify-center gap-1 p-2 text-slate-400 dark:text-[#A0A0A0] flex-1 hover:text-brand-orange transition-all"
-    >
-      <i data-lucide="graduation-cap" class="w-5 h-5"></i>
-      <span class="text-[9px]">क्लासरूम</span>
-    </button>
-    <button 
-      id="mob-nav-[#F5F5F5]"
-      class="flex flex-col items-center justify-center gap-1 p-2 text-slate-400 dark:text-[#A0A0A0] flex-1 hover:text-brand-orange transition-all"
-    >
-      <i data-lucide="file-text" class="w-5 h-5"></i>
-      <span class="text-[9px]">स्टडी मटेरियल</span>
+      <i data-lucide="star" class="w-5 h-5"></i>
+      <span class="text-[9px]">मेरे बैच</span>
     </button>
   </nav>
 

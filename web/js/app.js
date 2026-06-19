@@ -27,6 +27,30 @@ const CATEGORIES = [
   { id: 'offline', name: 'ऑफलाइन क्लासेस', catId: 5, icon: 'users' }
 ];
 
+// Mobile Sidebar Utility
+const sidebar = {
+  open: () => {
+    const el = document.getElementById('app-sidebar');
+    const overlay = document.getElementById('mobile-sidebar-overlay');
+    if (el && overlay) {
+      el.classList.remove('-translate-x-full');
+      overlay.classList.remove('hidden');
+      setTimeout(() => overlay.classList.add('opacity-100'), 10);
+      document.body.style.overflow = 'hidden';
+    }
+  },
+  close: () => {
+    const el = document.getElementById('app-sidebar');
+    const overlay = document.getElementById('mobile-sidebar-overlay');
+    if (el && overlay) {
+      el.classList.add('-translate-x-full');
+      overlay.classList.remove('opacity-100');
+      setTimeout(() => overlay.classList.add('hidden'), 300);
+      document.body.style.overflow = '';
+    }
+  }
+};
+
 // Initialize on Load
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
@@ -34,13 +58,27 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidebar();
   initSearch();
   initModal();
-  
+  initMobileNav();
+
   // Listen to hash changes for Routing
-  window.addEventListener('hashchange', handleRoute);
+  window.addEventListener('hashchange', () => {
+    sidebar.close(); // Auto close sidebar on navigation
+    handleRoute();
+  });
   
   // Initial Route dispatch
   handleRoute();
 });
+
+function initMobileNav() {
+  const openBtn = document.getElementById('open-sidebar-btn');
+  const closeBtn = document.getElementById('close-sidebar-btn');
+  const overlay = document.getElementById('mobile-sidebar-overlay');
+
+  if (openBtn) openBtn.addEventListener('click', sidebar.open);
+  if (closeBtn) closeBtn.addEventListener('click', sidebar.close);
+  if (overlay) overlay.addEventListener('click', sidebar.close);
+}
 
 // Toast System
 function showToast(message, type = 'success') {
@@ -147,6 +185,8 @@ function initSearch() {
     const currentHash = window.location.hash || '#/';
     if (currentHash === '#/') {
       renderBatchesGrid();
+    } else if (currentHash === '#/saved') {
+      renderSavedView(document.getElementById('app-view-container'));
     } else if (currentHash.startsWith('#/batch/')) {
       if (state.activeBatchTab === 'classroom') {
         filterClassroomSubjects();
@@ -168,6 +208,8 @@ function initSearch() {
       const currentHash = window.location.hash || '#/';
       if (currentHash === '#/') {
         renderBatchesGrid();
+      } else if (currentHash === '#/saved') {
+        renderSavedView(document.getElementById('app-view-container'));
       } else if (currentHash.startsWith('#/batch/')) {
         if (state.activeBatchTab === 'classroom') {
           filterClassroomSubjects();
@@ -184,11 +226,32 @@ function initSearch() {
 // Side-bar rendering handler
 function initSidebar() {
   const container = document.getElementById('sidebar-categories');
-  const savedContainer = document.getElementById('sidebar-saved-batches');
+  const navHome = document.getElementById('side-nav-home');
+  const navSaved = document.getElementById('side-nav-saved');
+  const countBadge = document.getElementById('saved-count-badge');
+
+  const hash = window.location.hash || '#/';
+
+  if (countBadge) countBadge.textContent = state.savedBatches.length;
+
+  // Update Navigation Active States
+  if (navHome) {
+    const isHome = hash === '#/' || hash === '';
+    navHome.className = `w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-display font-medium tracking-wide transition-all duration-200 ${
+      isHome ? "bg-brand-orange/10 dark:bg-brand-orange/15 text-brand-orange font-bold border-r-3 border-r-brand-orange" : "text-slate-600 dark:text-[#A0A0A0] hover:bg-slate-100 dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white border border-transparent"
+    }`;
+  }
+
+  if (navSaved) {
+    const isSavedView = hash === '#/saved';
+    navSaved.className = `w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-display font-medium tracking-wide transition-all duration-200 ${
+      isSavedView ? "bg-brand-orange/10 dark:bg-brand-orange/15 text-brand-orange font-bold border-r-3 border-r-brand-orange" : "text-slate-600 dark:text-[#A0A0A0] hover:bg-slate-100 dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white border border-transparent"
+    }`;
+  }
   
   if (container) {
     container.innerHTML = CATEGORIES.map(cat => {
-      const isSel = (cat.catId === state.selectedCategory);
+      const isSel = (cat.catId === state.selectedCategory && (hash === '#/' || hash === ''));
       return `
         <button
           data-cat-id="${cat.catId !== null ? cat.catId : 'all'}"
@@ -202,9 +265,6 @@ function initSidebar() {
             <i data-lucide="${cat.icon}" class="w-4 h-4 ${isSel ? 'text-brand-orange animate-pulse' : 'text-slate-400 dark:text-[#A0A0A0]' }"></i>
             <span>${cat.name}</span>
           </div>
-          ${cat.hot ? `
-            <span class="text-[9px] px-1.5 py-0.5 rounded bg-brand-orange/10 text-brand-orange font-mono font-bold animate-pulse">HOT</span>
-          ` : ''}
         </button>
       `;
     }).join('');
@@ -214,30 +274,11 @@ function initSidebar() {
       btn.addEventListener('click', (e) => {
         const rawId = btn.getAttribute('data-cat-id');
         state.selectedCategory = rawId === 'all' ? null : parseInt(rawId);
+        window.location.hash = '#/';
         initSidebar();
-        if (window.location.hash !== '#/') {
-          window.location.hash = '#/';
-        } else {
-          renderBatchesGrid();
-        }
+        renderBatchesGrid();
       });
     });
-  }
-
-  if (savedContainer) {
-    if (state.savedBatches.length === 0) {
-      savedContainer.innerHTML = `<p class="text-[10px] text-slate-400 dark:text-[#A0A0A0] pl-3 py-2 italic">कोई बैच सेव नहीं है</p>`;
-    } else {
-      savedContainer.innerHTML = state.savedBatches.map(batch => `
-        <button
-          onclick="window.location.hash = '#/batch/${batch.id}'"
-          class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-[11px] font-medium text-slate-600 dark:text-[#A0A0A0] hover:bg-slate-100 dark:hover:bg-white/[0.04] hover:text-slate-900 dark:hover:text-white transition-all group"
-        >
-          <i data-lucide="star" class="w-3.5 h-3.5 text-brand-orange fill-brand-orange"></i>
-          <span class="truncate text-left">${batch.title}</span>
-        </button>
-      `).join('');
-    }
   }
   
   lucide.createIcons();
@@ -250,15 +291,18 @@ function toggleSaveBatch(batchId) {
   const index = state.savedBatches.findIndex(b => b.id === batchId);
   if (index === -1) {
     state.savedBatches.push(batch);
-    showToast("बैच 'मेरे बैच' में जोड़ा गया", "success");
+    showToast("बैच 'सेव' किया गया", "success");
   } else {
     state.savedBatches.splice(index, 1);
-    showToast("बैच 'मेरे बैच' से हटाया गया", "info");
+    showToast("बैच 'सेव' से हटाया गया", "info");
   }
 
   localStorage.setItem('savedBatches', JSON.stringify(state.savedBatches));
   initSidebar();
-  renderBatchesGrid();
+
+  const hash = window.location.hash || '#/';
+  if (hash === '#/saved') renderSavedView(document.getElementById('app-view-container'));
+  else renderBatchesGrid();
 }
 window.toggleSaveBatch = toggleSaveBatch;
 
@@ -283,42 +327,138 @@ async function fetchNoteAndOpen(noteId) {
 window.fetchNoteAndOpen = fetchNoteAndOpen;
 
 // Router Logic
-function handleRoute() {
+async function handleRoute() {
   const hash = window.location.hash || '#/';
   state.lastPath = hash;
   
   const viewContainer = document.getElementById('app-view-container');
+  const mainContent = document.getElementById('main-content');
   if (!viewContainer) return;
 
-  // 1. Home Grid Route
-  if (hash === '#/' || hash === '') {
-    renderHomeView(viewContainer);
+  initSidebar();
+
+  // Smooth scroll main container to top on route change
+  if (mainContent) {
+    mainContent.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  // 2. Batch Detail Route matches: #/batch/:id
-  else if (hash.startsWith('#/batch/')) {
-    const split = hash.split('/');
-    const batchId = parseInt(split[2]);
-    if (isNaN(batchId)) {
-      window.location.hash = '#/';
-      return;
+
+  try {
+    // 1. Home Grid Route
+    if (hash === '#/' || hash === '') {
+      await renderHomeView(viewContainer);
     }
-    renderBatchDetailView(viewContainer, batchId);
+    // 2. Saved Batches Route
+    else if (hash === '#/saved') {
+      await renderSavedView(viewContainer);
+    }
+    // 3. Batch Detail Route matches: #/batch/:id
+    else if (hash.startsWith('#/batch/')) {
+      const split = hash.split('/');
+      const batchId = parseInt(split[2]);
+      if (isNaN(batchId)) {
+        window.location.hash = '#/';
+      } else {
+        await renderBatchDetailView(viewContainer, batchId);
+      }
+    }
+    // 4. Subject lectures Route matches: #/subject/:batchId/:subjectId/:subjectName
+    else if (hash.startsWith('#/subject/')) {
+      const split = hash.split('/');
+      const batchId = parseInt(split[2]);
+      const subjectId = parseInt(split[3]);
+      const subjectName = decodeURIComponent(split[4] || 'Subject');
+      if (isNaN(batchId) || isNaN(subjectId)) {
+        window.location.hash = '#/';
+      } else {
+        await renderSubjectDetailView(viewContainer, batchId, subjectId, subjectName);
+      }
+    } else {
+      window.location.hash = '#/';
+    }
+  } catch (err) {
+    console.error("Routing error:", err);
   }
-  // 3. Subject lectures Route matches: #/subject/:batchId/:subjectId/:subjectName
-  else if (hash.startsWith('#/subject/')) {
-    const split = hash.split('/');
-    const batchId = parseInt(split[2]);
-    const subjectId = parseInt(split[3]);
-    const subjectName = decodeURIComponent(split[4] || 'Subject');
-    if (isNaN(batchId) || isNaN(subjectId)) {
-      window.location.hash = '#/';
-      return;
-    }
-    renderSubjectDetailView(viewContainer, batchId, subjectId, subjectName);
+}
+
+// --- VIEW 0: SAVED VIEW ---
+async function renderSavedView(container) {
+  container.innerHTML = `
+    <div class="space-y-6">
+      <div class="flex items-center justify-between py-1">
+        <div>
+          <h3 class="font-display font-extrabold text-base md:text-lg tracking-tight text-slate-800 dark:text-white flex items-center gap-2">
+            <i data-lucide="star" class="w-5 h-5 text-brand-orange fill-brand-orange"></i>
+            मेरे सेव किए गए बैच
+          </h3>
+          <p class="text-xs text-slate-400 dark:text-[#A0A0A0] mt-0.5">आपके पसंदीदा कोर्सेज की सूची</p>
+        </div>
+        <button onclick="window.location.hash = '#/'" class="text-xs text-brand-orange font-bold hover:underline">और कोर्सेज देखें</button>
+      </div>
+
+      <div id="saved-batches-grid"></div>
+    </div>
+  `;
+
+  const grid = document.getElementById('saved-batches-grid');
+  if (state.savedBatches.length === 0) {
+    grid.innerHTML = `
+      <div class="text-center py-20 bg-white dark:bg-[#12151C] rounded-3xl border border-dashed border-slate-200 dark:border-white/10 select-none">
+        <i data-lucide="bookmark" class="w-12 h-12 text-slate-200 dark:text-white/5 mx-auto mb-4"></i>
+        <h4 class="font-display font-bold text-base text-slate-400">आपने कोई बैच सेव नहीं किया है</h4>
+      </div>
+    `;
   } else {
-    // Unsupported fallback route
-    window.location.hash = '#/';
+    let list = state.savedBatches;
+    if (state.searchQuery.trim() !== '') {
+      const q = state.searchQuery.toLowerCase();
+      list = list.filter(b => b.title.toLowerCase().includes(q));
+    }
+    grid.innerHTML = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">${
+      list.map(batch => renderBatchCardHtml(batch)).join('')
+    }</div>`;
   }
+  lucide.createIcons();
+}
+
+function renderBatchCardHtml(batch) {
+  const thumb = batch.image_large || "https://kgs-v2.akamaized.net/kgs/kgs/courses/large/82f0b5d0-3191-40c1-8e53-323e0dfdb3b1.jpg";
+  const category = CATEGORIES.find(c => c.catId === batch.category_id) || { name: 'अन्य कोर्सेज' };
+  const isSaved = state.savedBatches.some(b => b.id === batch.id);
+
+  return `
+    <div
+      onclick="window.location.hash = '#/batch/${batch.id}'"
+      class="group bg-white dark:bg-[#12151C] border border-slate-200/50 dark:border-white/10 rounded-2xl overflow-hidden shadow-md hover:shadow-2xl hover:border-brand-orange/40 transition-all duration-200 flex flex-col h-full relative cursor-pointer"
+    >
+      <button
+        onclick="event.stopPropagation(); toggleSaveBatch(${batch.id})"
+        class="absolute top-3 right-3 z-30 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white border border-white/10 backdrop-blur-sm transition-all active:scale-90"
+      >
+        <i data-lucide="star" class="w-4 h-4 ${isSaved ? 'fill-brand-orange text-brand-orange' : ''}"></i>
+      </button>
+
+      <div class="aspect-video w-full bg-slate-100 dark:bg-slate-900 overflow-hidden relative select-none">
+        <img src="${thumb}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" referrerpolicy="no-referrer" />
+        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent w-full"></div>
+      </div>
+
+      <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
+        <div class="space-y-2">
+          <span class="text-[10px] font-mono font-bold tracking-wider text-brand-orange uppercase">${category.name}</span>
+          <h4 class="font-display font-extrabold text-sm md:text-base text-slate-800 dark:text-slate-100 group-hover:text-brand-orange transition-colors leading-snug">${batch.title}</h4>
+        </div>
+        <div class="pt-2 border-t border-slate-100 dark:border-white/10 flex items-center justify-between text-[11px] text-slate-400 dark:text-[#A0A0A0]">
+          <div class="space-y-0.5">
+            <p>प्रारंभ: <span class="font-mono font-bold text-slate-700 dark:text-slate-300">${batch.start_at || 'N/A'}</span></p>
+          </div>
+          <div class="px-4 py-2 text-xs font-display font-bold text-white bg-[#0B0E14] dark:bg-white/5 group-hover:bg-brand-orange dark:group-hover:bg-brand-orange border border-slate-200 dark:border-white/10 group-hover:border-transparent rounded-xl transition-all flex items-center space-x-1">
+            <span>अध्ययन करें</span>
+            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 // --- VIEW 1: HOME VIEW ---
@@ -449,10 +589,14 @@ async function loadBatchesData() {
       grid.innerHTML = `
         <div class="text-center py-20 bg-white dark:bg-[#12151C] rounded-3xl border border-rose-250/20 text-rose-500 select-none animate-fade-in">
           <i data-lucide="alert-circle" class="w-12 h-12 text-rose-500 mx-auto mb-4"></i>
-          <h4 class="font-display font-bold text-base">Error Loading Data</h4>
-          <p class="text-slate-400 dark:text-[#A0A0A0] text-xs mt-1 px-4 leading-relaxed max-w-sm mx-auto">
+          <h4 class="font-display font-bold text-base">डेटा लोड करने में त्रुटि</h4>
+          <p class="text-slate-400 dark:text-[#A0A0A0] text-xs mt-1 px-4 leading-relaxed max-w-sm mx-auto mb-6">
             सर्वर या नेटवर्क त्रुटि के कारण बैच सूची लोड नहीं हो सकी। कृपया इंटरनेट जांचें।
           </p>
+          <button onclick="window.location.reload()" class="px-6 py-2 bg-rose-500 text-white rounded-xl text-xs font-bold hover:bg-rose-600 transition-all active:scale-95 flex items-center gap-2 mx-auto">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span>पुनः प्रयास करें (Retry)</span>
+          </button>
         </div>
       `;
       lucide.createIcons();
@@ -484,9 +628,13 @@ function renderBatchesGrid() {
           <i data-lucide="users" class="w-6 h-6 text-slate-300 dark:text-[#A0A0A0]"></i>
         </div>
         <h4 class="font-display font-bold text-base text-slate-800 dark:text-slate-300">कोई सक्रिय बैच नहीं मिला</h4>
-        <p class="text-slate-400 dark:text-[#A0A0A0] text-xs mt-1.5 px-4 max-w-sm mx-auto leading-relaxed">
+        <p class="text-slate-400 dark:text-[#A0A0A0] text-xs mt-1.5 px-4 max-w-sm mx-auto leading-relaxed mb-6">
           आपके खोजे गए शब्द से मेल खाता हुआ कोई बैच नहीं मिला। नई श्रेणी चुनकर देखें।
         </p>
+        <button onclick="window.location.reload()" class="px-6 py-2 bg-brand-orange text-white rounded-xl text-xs font-bold hover:bg-brand-orange-light transition-all active:scale-95 flex items-center gap-2 mx-auto">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          <span>रिफ्रेश करें (Refresh)</span>
+        </button>
       </div>
     `;
     lucide.createIcons();
@@ -495,76 +643,7 @@ function renderBatchesGrid() {
   
   container.innerHTML = `
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-fade-in">
-      ${filtered.map(batch => {
-        // Fallback default image representation if unavailable or corrupted
-        const thumb = batch.image_large || "https://kgs-v2.akamaized.net/kgs/kgs/courses/large/82f0b5d0-3191-40c1-8e53-323e0dfdb3b1.jpg";
-
-        // Find category name
-        const category = CATEGORIES.find(c => c.catId === batch.category_id) || { name: 'अन्य कोर्सेज' };
-        const isSaved = state.savedBatches.some(b => b.id === batch.id);
-
-        return `
-          <div class="group bg-white dark:bg-[#12151C] border border-slate-200/50 dark:border-white/10 rounded-2xl overflow-hidden shadow-md hover:shadow-2xl hover:border-brand-orange/40 transition-all duration-300 flex flex-col h-full relative">
-
-            <!-- Save/Favorite Star Button -->
-            <button
-              onclick="event.stopPropagation(); toggleSaveBatch(${batch.id})"
-              class="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white border border-white/10 backdrop-blur-sm transition-all active:scale-90"
-              title="${isSaved ? 'मेरे बैच से हटाएँ' : 'मेरे बैच में जोड़ें'}"
-            >
-              <i data-lucide="star" class="w-4 h-4 ${isSaved ? 'fill-brand-orange text-brand-orange' : ''}"></i>
-            </button>
-
-            <!-- Media block -->
-            <div class="aspect-video w-full bg-slate-100 dark:bg-slate-900 overflow-hidden relative select-none">
-              <img 
-                src="${thumb}" 
-                alt="${batch.title}" 
-                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                loading="lazy"
-                referrerpolicy="no-referrer"
-                onerror="this.src='https://kgs-v2.akamaized.net/kgs/kgs/courses/large/82f0b5d0-3191-40c1-8e53-323e0dfdb3b1.jpg'"
-              />
-              <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent w-full"></div>
-              
-              <span class="absolute top-3 left-3 text-[9px] px-2 py-0.5 rounded-md bg-brand-orange text-white font-mono font-bold tracking-widest uppercase">
-                ${category.id === 'recorded' ? 'RECORDED' : (category.id === 'offline' ? 'OFFLINE' : 'LIVE')}
-              </span>
-              
-              <span class="absolute bottom-3 right-3 text-[10px] font-mono px-2 py-0.5 rounded bg-black/60 text-white border border-white/10 font-bold backdrop-blur-sm">
-                प्रवेश शुरू
-              </span>
-            </div>
-
-            <!-- Meta and content details -->
-            <div class="p-5 flex-1 flex flex-col justify-between space-y-4">
-              <div class="space-y-2">
-                <span class="text-[10px] font-mono font-bold tracking-wider text-brand-orange uppercase">
-                  ${category.name}
-                </span>
-                <h4 class="font-display font-extrabold text-sm md:text-base text-slate-800 dark:text-slate-100 group-hover:text-brand-orange transition-colors duration-200 leading-snug">
-                  ${batch.title}
-                </h4>
-              </div>
-
-              <div class="pt-2 border-t border-slate-100 dark:border-white/10 flex items-center justify-between text-[11px] text-slate-400 dark:text-[#A0A0A0]">
-                <div class="space-y-0.5">
-                  <p class="font-sans">प्रारंभ: <span class="font-mono font-bold text-slate-700 dark:text-slate-300">${batch.start_at || 'N/A'}</span></p>
-                  <p class="font-sans">समाप्ति: <span class="font-mono text-slate-500">${batch.end_at || 'N/A'}</span></p>
-                </div>
-                
-                <button 
-                  onclick="window.location.hash = '#/batch/${batch.id}'"
-                  class="px-4 py-2 text-xs font-display font-bold text-white bg-[#0B0E14] dark:bg-white/5 hover:bg-brand-orange dark:hover:bg-brand-orange border border-slate-200 dark:border-white/10 hover:border-transparent rounded-xl transition-all flex items-center space-x-1"
-                >
-                  <span>अध्ययन करें</span>
-                  <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('')}
+      ${filtered.map(batch => renderBatchCardHtml(batch)).join('')}
     </div>
   `;
   
@@ -583,7 +662,7 @@ async function renderBatchDetailView(container, batchId) {
   if (!batch) {
     batch = {
       id: batchId,
-      title: "विजेता 3.0 बैच – 72nd BPSC Prelims Exam",
+      title: "Batch Loading...",
       start_at: "2026-05-05",
       end_at: "2026-08-05",
       image_large: "https://kgs-v2.akamaized.net/kgs/kgs/courses/large/82f0b5d0-3191-40c1-8e53-323e0dfdb3b1.jpg"
@@ -742,7 +821,11 @@ async function renderLiveClasses(batchId) {
       <div class="text-center py-16 bg-white dark:bg-[#12151C] rounded-3xl border border-rose-200 dark:border-rose-950 text-rose-500 animate-fade-in select-none">
         <i data-lucide="alert-triangle" class="w-12 h-12 mx-auto mb-4 text-rose-500"></i>
         <h4 class="font-display font-bold text-base">डेटा लोड करने में असमर्थ</h4>
-        <p class="text-xs mt-1 px-4 text-slate-400 dark:text-[#A0A0A0]">लाइव फीड लोड करते समय एरर आया। कृपया दोबारा चेष्टा करें।</p>
+        <p class="text-xs mt-1 px-4 text-slate-400 dark:text-[#A0A0A0] mb-6">लाइव फीड लोड करते समय एरर आया। कृपया दोबारा चेष्टा करें।</p>
+        <button onclick="window.location.reload()" class="px-6 py-2 bg-rose-500 text-white rounded-xl text-xs font-bold hover:bg-rose-600 transition-all active:scale-95 flex items-center gap-2 mx-auto">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          <span>पुनः प्रयास करें (Retry)</span>
+        </button>
       </div>
     `;
     lucide.createIcons();
@@ -773,10 +856,14 @@ function filterLiveLectures() {
         <div class="w-12 h-12 rounded-full bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 flex items-center justify-center mx-auto mb-4">
           <i data-lucide="tv" class="w-6 h-6 text-slate-300 dark:text-[#A0A0A0]"></i>
         </div>
-        <h4 class="font-display font-bold text-base text-slate-800 dark:text-slate-300">No Live Classes Available</h4>
-        <p class="text-slate-400 dark:text-[#A0A0A0] text-xs mt-1.5 px-4 max-w-sm mx-auto leading-relaxed">
+        <h4 class="font-display font-bold text-base text-slate-800 dark:text-slate-300">कोई लाइव क्लास उपलब्ध नहीं है</h4>
+        <p class="text-slate-400 dark:text-[#A0A0A0] text-xs mt-1.5 px-4 max-w-sm mx-auto leading-relaxed mb-6">
           चिंता न करें! आप तब तक 'क्लासरूम' रिकॉर्डेड लेक्चर खंड का अध्ययन कर सकते हैं।
         </p>
+        <button onclick="window.location.reload()" class="px-6 py-2 bg-brand-orange text-white rounded-xl text-xs font-bold hover:bg-brand-orange-light transition-all active:scale-95 flex items-center gap-2 mx-auto">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          <span>रिफ्रेश करें (Refresh)</span>
+        </button>
       </div>
     `;
     lucide.createIcons();
@@ -900,8 +987,12 @@ async function renderClassroomSubjects(batchId) {
     container.innerHTML = `
       <div class="text-center py-16 bg-white dark:bg-[#12151C] rounded-3xl border border-rose-200 dark:border-rose-950 text-rose-500 animate-fade-in select-none">
         <i data-lucide="alert-triangle" class="w-12 h-12 mx-auto mb-4 text-rose-500"></i>
-        <h4 class="font-display font-bold text-base">Error Loading Subject Streams</h4>
-        <p class="text-xs mt-1 px-4 text-slate-400 dark:text-[#A0A0A0]">सर्वर से कनेक्ट करने में त्रुटि। कृपया पुनः प्रयास करें।</p>
+        <h4 class="font-display font-bold text-base">विषय लोड करने में त्रुटि</h4>
+        <p class="text-xs mt-1 px-4 text-slate-400 dark:text-[#A0A0A0] mb-6">सर्वर से कनेक्ट करने में त्रुटि। कृपया पुनः प्रयास करें।</p>
+        <button onclick="window.location.reload()" class="px-6 py-2 bg-rose-500 text-white rounded-xl text-xs font-bold hover:bg-rose-600 transition-all active:scale-95 flex items-center gap-2 mx-auto">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          <span>पुनः प्रयास करें (Retry)</span>
+        </button>
       </div>
     `;
     lucide.createIcons();
@@ -932,9 +1023,13 @@ function filterClassroomSubjects() {
           <i data-lucide="graduation-cap" class="w-6 h-6 text-slate-300 dark:text-[#A0A0A0]"></i>
         </div>
         <h4 class="font-display font-bold text-base text-slate-800 dark:text-slate-300">विषय का विवरण उपलब्ध नहीं है</h4>
-        <p class="text-slate-400 dark:text-[#A0A0A0] text-xs mt-1.5 px-4 mx-auto leading-relaxed max-w-sm">
+        <p class="text-slate-400 dark:text-[#A0A0A0] text-xs mt-1.5 px-4 mx-auto leading-relaxed max-w-sm mb-6">
           खोजे गए नाम से संबंधित कोई विषय इस बैच के क्लासरूम रिकॉर्डिंग में उपलब्ध नहीं है।
         </p>
+        <button onclick="window.location.reload()" class="px-6 py-2 bg-brand-orange text-white rounded-xl text-xs font-bold hover:bg-brand-orange-light transition-all active:scale-95 flex items-center gap-2 mx-auto">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          <span>रिफ्रेश करें (Refresh)</span>
+        </button>
       </div>
     `;
     lucide.createIcons();
@@ -1170,9 +1265,13 @@ function filterActiveLectures() {
         <div class="text-center py-16 bg-white dark:bg-[#12151C] rounded-3xl border border-dashed border-slate-200 dark:border-white/10 select-none">
           <i data-lucide="video" class="w-12 h-12 text-slate-300 dark:text-[#A0A0A0] mx-auto mb-4"></i>
           <h4 class="font-display font-bold text-base text-slate-800 dark:text-slate-300">कोई वीडियो व्याख्यान उपलब्ध नहीं हैं</h4>
-          <p class="text-slate-400 dark:text-[#A0A0A0] text-xs mt-1.5 px-4 max-w-sm mx-auto leading-relaxed">
+          <p class="text-slate-400 dark:text-[#A0A0A0] text-xs mt-1.5 px-4 max-w-sm mx-auto leading-relaxed mb-6">
             इस विषय में अभी कोई वीडियो लेक्चर अपडेट नहीं हुआ है। अन्य विषयों की जांच करें।
           </p>
+          <button onclick="window.location.reload()" class="px-6 py-2 bg-brand-orange text-white rounded-xl text-xs font-bold hover:bg-brand-orange-light transition-all active:scale-95 flex items-center gap-2 mx-auto">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span>रिफ्रेश करें (Refresh)</span>
+          </button>
         </div>
       `;
       lucide.createIcons();
@@ -1259,9 +1358,13 @@ function filterActiveLectures() {
         <div class="text-center py-16 bg-white dark:bg-[#12151C] rounded-3xl border border-dashed border-slate-200 dark:border-white/10 select-none">
           <i data-lucide="file-text" class="w-12 h-12 text-slate-300 dark:text-[#A0A0A0] mx-auto mb-4"></i>
           <h4 class="font-display font-bold text-base text-slate-800 dark:text-slate-300">कोई पीडीएफ नोट्स उपलब्ध नहीं हैं</h4>
-          <p class="text-slate-400 dark:text-[#A0A0A0] text-xs mt-1.5 px-4 max-w-sm mx-auto leading-relaxed">
+          <p class="text-slate-400 dark:text-[#A0A0A0] text-xs mt-1.5 px-4 max-w-sm mx-auto leading-relaxed mb-6">
             इस विषय के लिए अभी कोई लिखित क्लासरूम पीडीएफ नोट्स पब्लिश नहीं हुए हैं।
           </p>
+          <button onclick="window.location.reload()" class="px-6 py-2 bg-brand-orange text-white rounded-xl text-xs font-bold hover:bg-brand-orange-light transition-all active:scale-95 flex items-center gap-2 mx-auto">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            <span>रिफ्रेश करें (Refresh)</span>
+          </button>
         </div>
       `;
       lucide.createIcons();
